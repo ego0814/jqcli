@@ -298,4 +298,5 @@ AkShare bond_cb_redeem_jsl 是"当前时点快照"（317 行 = 当前存续转�
 - 当前本地回测默认 `--credit-filter on --credit-tier light`、Top 50%、已持仓 Top 60% 缓冲、2% 权重无交易带、单只 5% 上限。旧情景的数字仅用于历史对照。
 - 独立复核使用 local/data/cb_v14_pit_predictions.csv 与 local/data/cb_v14_pit_backtest；强赎历史快照不回填、流动性要求完整 20 个交易日。2023-2026 区间已参与规则和参数选择，不能据此声称独立样本外通过。
 - **信号与成交时点（2026-09-25 定权威口径）**：信号 = T 日收盘特征，执行 = T+1 开盘（`next_open`）。`strategies/cb_double_low_v1.py` 目前仍为 `run_daily(..., time="close")` 并在 T 日成交，与权威口径不符；本地回测引擎也只支持收盘成交，`--execution-timing next_open` 目前仅为标签/位移近似。日程敏感性检验见 records/cb_double_low/schedule_sensitivity.md：年化极差 32.6%，实盘对应 T+1 口径为 7.74%。该文件未经聚宽编译与回测验证。
+→ 注：`strategies/cb_double_low_v1.py` 已废弃（2026-09-25），实盘不经过此代码。实盘链路为 `monthly_signal.py` + 手工下单。
 - **部署门禁**：月末模拟信号要求目标日行情、PIT 转股价、ST 掩码、评级与强赎快照全部覆盖信号日，缺一项即失败退出。ST 掩码由 factor_lab/data/step0b_st_mask.py 从 px_*.parquet 与 namechange.parquet 重建，这两个上游缓存目前不属于月度自动化刷新链，需人工刷新后才能生成正式信号。

@@ -141,6 +141,10 @@ v3 的改造（扩分位 + 换手缓冲带 + 权重无交易带）把换手从 4
 - 本地回测为近似实现：停牌/退市按"缺失日收益计 0"，未模拟强赎清算细节
 - 中证全指基准数据不可得
 
+- **策略代码已废弃（2026-09-25）**：`strategies/cb_double_low_v1.py` 为历史版本，实盘不经过此代码。
+  实盘链路为 `monthly_signal.py` 生成信号 + 手工下单。执行口径为 T 日收盘信号 + T+1 开盘执行。
+  策略代码当前仍为 `run_daily(time="close")`，与权威口径不符，不再维护。
+
 ## 数据产物
 
 - 本地回测脚本：factor_lab/data/backtest_cb_double_low.py（支持 --top-quantile / --hysteresis-quantile / --weight-band / 成本三参数）
