@@ -7,13 +7,22 @@
 1. [0/3] cb_daily / cb_basic / cb_redeem_jsl 增量刷新
 2. [0/3b] cb_rating 增量刷新
 3. [0/3c] ST 掩码链（px → namechange → st_mask）
+3b. [0/3b2] 研究平台认证自检（失效则自动登录；仍失效则 exit 2）
 4. [1/3] monthly_signal（若 cb_convert 未覆盖信号日，会在第 1 道门禁退出 2）
 
 前 3 步任一步失败，run_monthly.ps1 直接 exit 2，不会发布正式信号。
 
 ## 人工步骤（在 run_monthly 之前或之后）
 
-5. cb_convert 抓取 + 解码：
+5. 先确认研究平台认证（research 依赖聚宽登录态）：
+
+   - `jqcli research ls` 正常返回 → 直接进入下一步
+   - 报 `not_authenticated` → 先跑 `python local/scripts/jq_auto_login.py`
+     （Playwright 自动登录聚宽并导入浏览器级 cookie；需先把密码填进
+     `local/secrets/jq_login.json`；该文件已 gitignore，且权限仅当前用户可读写）
+   - run_monthly.ps1 的 `[0/3b2]` 已内置同一自检 + 自动登录兜底
+
+6. cb_convert 抓取 + 解码：
 
 ```powershell
 cd D:\project\jqcli
@@ -30,7 +39,7 @@ D:\project\jqcli\factor_lab\.venv\Scripts\python.exe factor_lab\data\download_cb
 
 | # | 门禁 | 由谁满足 |
 |---|---|---|
-| 1 | 信号当日有 PIT 溢价率 | 人工步骤 5 |
+| 1 | 信号当日有 PIT 溢价率 | 人工步骤 6 |
 | 2 | cb_rating / cb_redeem_jsl / cb_basic 的 mtime ≥ 信号日 | 自动 1 / 2 |
 | 3 | st_mask 最新日期 ≥ 信号日 | 自动 3 |
 | 4 | cb_daily 有信号当日行情 | 自动 1 |

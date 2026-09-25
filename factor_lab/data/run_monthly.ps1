@@ -66,6 +66,10 @@ $LogFile     = Join-Path $LogDir "monthly_run_$Stamp.log"
 $env:JQCLI_TRADE_CAL   = Join-Path $ProjectRoot "data\cache\trade_cal.parquet"
 $env:JQCLI_CB_DAILY    = Join-Path $ProjectRoot "data\cache\cb_daily.parquet"
 $env:JQCLI_MAX_CATCHUP = "$MaxCatchupDays"
+$RepoRoot        = Split-Path $ProjectRoot -Parent
+$Jqcli           = Join-Path $RepoRoot ".venv\Scripts\jqcli.exe"
+$AutoLoginPy     = Join-Path $RepoRoot "local\scripts\jq_auto_login.py"
+$AutoLoginPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"
 
 # 编码：让 python 用 UTF-8 输出，并让 PowerShell 按 UTF-8 解码子进程输出。
 # 否则中文在控制台和日志里会变成乱码（实测 PS 5.1 + cp936 locale 的默认组合会双双不匹配）。
@@ -218,6 +222,27 @@ if ($SkipRating) {
         Write-Host "[评级] 刷新完成"
     }
 }
+
+# ---------- [0/3b2] 研究平台认证自检（失效则自动登录） ----------
+if (-not (Test-Path $Jqcli)) {
+    Write-Host ("[错误] 找不到 jqcli：" + $Jqcli) -ForegroundColor Red
+    exit 2
+}
+$authProbe = (& $Jqcli --non-interactive --format json research ls 2>&1 | Out-String)
+if ($authProbe -match "not_authenticated") {
+    Write-Host "研究平台认证失效，尝试自动登录..." -ForegroundColor Yellow
+    if (Test-Path $AutoLoginPy) {
+        & $AutoLoginPython $AutoLoginPy 2>&1 | Tee-Object -FilePath $LogFile -Append
+        $authProbe = (& $Jqcli --non-interactive --format json research ls 2>&1 | Out-String)
+    } else {
+        Write-Host ("[错误] 找不到自动登录脚本：" + $AutoLoginPy) -ForegroundColor Red
+    }
+    if ($authProbe -match "not_authenticated") {
+        Write-Host "[错误] 自动登录失败，请手动处理" -ForegroundColor Red
+        exit 2
+    }
+}
+Write-Host "研究平台认证: 正常"
 
 # ---------- [0/3c] 刷新研究层 ST 掩码 (px -> namechange -> st_mask) ----------
 $StOk = $true
