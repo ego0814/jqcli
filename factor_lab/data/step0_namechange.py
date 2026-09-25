@@ -26,20 +26,30 @@ out_path = os.path.join(CACHE, "namechange.parquet")
 
 y0, y1 = 1990, 2026
 parts = []
+failed_years = []
 for y in range(y0, y1 + 1):
     s, e = f"{y}0101", f"{y}1231"
-    for attempt in range(3):
+    df = pd.DataFrame()
+    for attempt in range(4):
         try:
-            df = pro.namechange(start_date=s, end_date=e, fields=FIELDS)
-            break
+            _d = pro.namechange(start_date=s, end_date=e, fields=FIELDS)
         except Exception as ex:
             print(f"  {y} 第{attempt+1}次失败: {type(ex).__name__}: {str(ex)[:100]}")
-            df = pd.DataFrame()
-            time.sleep(1.5)
+            _d = None
+        if _d is not None and len(_d):
+            df = _d
+            break
+        time.sleep(1.5 * (attempt + 1))
+    if not len(df):
+        failed_years.append(y)
     print(f"  {y}: {len(df):5d} 条")
     if len(df):
         parts.append(df)
     time.sleep(0.35)
+
+if failed_years:
+    raise SystemExit("ERROR: {} 个年份未取到数据, 不写入: {}".format(
+        len(failed_years), failed_years))
 
 if not parts:
     raise SystemExit("未取到任何数据")

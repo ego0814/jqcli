@@ -3,8 +3,9 @@
     CB 双低 · 月度模拟盘自动化（行情刷新 + 信号 + 复盘）
 
 .DESCRIPTION
-    在调仓窗口内自动执行三步：
+    在调仓窗口内自动执行四步：
       [0/3] 刷新行情   download_cb.py --incremental（Tushare 增量 + AkShare 强赎快照）
+      [0/3c] 刷新 ST 掩码  step1_download.py --incremental -> step0_namechange.py -> step0b_st_mask.py
       [1/3] 生成信号   monthly_signal.py （下期目标清单 + 买卖清单）
       [2/3] 月度复盘   monthly_review.py （差异报告 + 追加台账）
 
@@ -26,7 +27,7 @@
     跳过守卫 1、守卫 2，强制运行（手动补跑时用）。
 
 .PARAMETER SkipRefresh
-    跳过 [0/3] 行情刷新（Tushare 增量 + AkShare 强赎快照）；评级刷新不受影响。
+    跳过 [0/3] 行情刷新与 [0/3c] ST 掩码刷新；评级刷新不受影响。
 
 .PARAMETER SkipRating
     跳过 [0/3b] 评级刷新（Tushare cb_rating）；与 -SkipRefresh 同时使用即整段刷新跳过。
@@ -113,6 +114,14 @@ function Get-DailyMax {
     $out = ($py | & $PythonExe -u - | Out-String).Trim()
     return $out
 }
+
+function Get-StMax {
+    $p = Join-Path $ProjectRoot "data\cache\st_mask.parquet"
+    $py = "import pandas as pd; d = pd.read_parquet(r'" + $p + "'); print(str(max(str(x) for x in d.index)))"
+    $out = ($py | & $PythonExe -u - | Out-String).Trim()
+    return $out
+}
+
 
 # 同一台机器的两个调度入口共用命名互斥量，避免同时刷新和发布信号。
 $Mutex = New-Object System.Threading.Mutex($false, 'Local\jqcli_cb_monthly')
@@ -210,7 +219,32 @@ if ($SkipRating) {
     }
 }
 
-if (-not $RefreshOk -or -not $RatingOk) {
+# ---------- [0/3c] 刷新研究层 ST 掩码 (px -> namechange -> st_mask) ----------
+$StOk = $true
+if ($SkipRefresh) {
+    Write-Host "ST 掩码刷新：已跳过（-SkipRefresh）" -ForegroundColor Yellow
+} else {
+    Write-Host "`n[0/3c] 刷新研究层 ST 掩码（step1_download -> step0_namechange -> step0b_st_mask）..." -ForegroundColor Yellow
+    $StStages = @(
+        @{ Name = "step1_download"; Args = @("--incremental") },
+        @{ Name = "step0_namechange"; Args = @() },
+        @{ Name = "step0b_st_mask"; Args = @() }
+    )
+    foreach ($stage in $StStages) {
+        $stScript = Join-Path $ProjectRoot ("data\" + $stage.Name + ".py")
+        & $PythonExe -u $stScript @($stage.Args) 2>&1 | Tee-Object -FilePath $LogFile -Append
+        if ($LASTEXITCODE -ne 0) {
+            $StOk = $false
+            Write-Host ("[ST] " + $stage.Name + " 失败（exit " + $LASTEXITCODE + "）") -ForegroundColor Red
+            break
+        }
+    }
+    if ($StOk) { Write-Host "[ST] 掩码刷新完成" }
+}
+$StMax = Get-StMax
+Write-Host ("ST 掩码最新交易日: " + $StMax)
+
+if (-not $RefreshOk -or -not $RatingOk -or -not $StOk) {
     Write-Host '[错误] 数据刷新不完整，本期不生成正式信号' -ForegroundColor Red
     exit 2
 }
