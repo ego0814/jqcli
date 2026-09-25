@@ -186,3 +186,13 @@ HTML 报告：**records/etf_pool/report_v1.html**（6.07 MB，plotly 内嵌，�
 已知缺口：报告不含「本地 + 聚宽」净值叠图——`make_report.py` 没有聚宽数据接入口，
 本地也缺聚宽逐日净值（聚宽侧只有 `_etf_{main,is,oos}_*_stats.json` 聚合指标）。
 
+## 数据源变更与哈希更新（2026-09-26）
+
+- 162411 数据源从「Tushare 头段 + AkShare 2018 起」改为纯 Tushare（AkShare 不可达）
+- 影响：全段比值 0.999993（区间 0.99639~1.00290），日收益差异仅 4 天 >1bp，最大 0.36%
+- 重跑确认：三段区间年化/夏普/回撤差异均 < 0.01pp（out_sample 逐点完全一致）
+- 归档结论不变
+- manifest 哈希：旧 74d286b052e5… → 新 71561283934a…
+- 重跑 tag：recheck_source_change_20260926
+- 重跑输出：factor_lab/output/etf_backtest/manifest_recheck_source_change_20260926.json
+
