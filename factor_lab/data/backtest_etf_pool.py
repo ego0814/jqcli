@@ -136,6 +136,8 @@ def main() -> int:
     ap.add_argument("--slippage", type=float, default=SLIPPAGE)
     ap.add_argument("--min-commission", type=float, default=MIN_COMMISSION)
     ap.add_argument("--tag", default="conservative")
+    ap.add_argument("--execution-timing", default="same_close", choices=["same_close", "next_open"],
+                    help="执行时点：same_close=信号与成交同为 T 日收盘（历史默认）；next_open=信号 T 日收盘、T+1 开盘执行（仅标签）")
     args = ap.parse_args()
     COMMISSION, SLIPPAGE, MIN_COMMISSION = args.commission, args.slippage, args.min_commission
     log("情景 {}: 佣金={:.7f} 滑点={:.4f} 最低佣金={:.1f} 元".format(
@@ -190,6 +192,29 @@ def main() -> int:
     for seg, det in details.items():
         if isinstance(det, pd.DataFrame) and not det.empty:
             det.to_parquet(OUT / "turnover_{}_{}.parquet".format(args.tag, seg), index=False)
+    import hashlib
+    import json
+    from datetime import datetime, timezone
+    def _digest(p):
+        h = hashlib.sha256()
+        with Path(p).open("rb") as src:
+            for chunk in iter(lambda: src.read(1024 * 1024), b""):
+                h.update(chunk)
+        return h.hexdigest()
+    _inp = CACHE / "etf_daily.parquet"
+    manifest = {
+        "generated_utc": datetime.now(timezone.utc).isoformat(), "tag": args.tag,
+        "input_files": {"etf_daily.parquet": {"path": str(_inp.resolve()), "sha256": _digest(_inp)}},
+        "code_sha256": _digest(Path(__file__)),
+        "execution_timing": args.execution_timing,
+        "execution_note": "引擎只支持收盘成交（信号日=执行日）；next_open 仅为标签/位移近似，未实现开盘成交逻辑",
+        "commission": COMMISSION, "slippage": SLIPPAGE, "min_commission": MIN_COMMISSION,
+        "max_weight": MAX_WEIGHT, "cost_buffer": COST_BUFFER,
+        "pool": POOL, "quarter_months": list(QUARTER_MONTHS),
+        "segments": [[s, a, b] for s, a, b in SEGMENTS],
+    }
+    (OUT / "manifest_{}.json".format(args.tag)).write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     log("净值曲线写出: {} 列={}".format("equity_curves.parquet", list(eq.columns)))
     for seg, _, _ in SEGMENTS:
         block = metrics_df[metrics_df["segment"] == seg]

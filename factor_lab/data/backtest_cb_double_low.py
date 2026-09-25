@@ -253,6 +253,8 @@ def main() -> int:
     ap.add_argument("--tag", default="conservative")
     ap.add_argument("--predictions", type=Path, default=LAB_DIR / "output" / "predictions" / "cb_predictions_v1.csv")
     ap.add_argument("--output-dir", type=Path, default=OUT)
+    ap.add_argument("--execution-timing", default="same_close", choices=["same_close", "next_open"],
+                    help="执行时点：same_close=信号与成交同为 T 日收盘（历史默认）；next_open=信号 T 日收盘、T+1 开盘执行（仅标签，未实现开盘成交）")
     args = ap.parse_args()
     OUT = args.output_dir
     OUT.mkdir(parents=True, exist_ok=True)
@@ -373,6 +375,8 @@ def main() -> int:
         "weight_band": WEIGHT_BAND, "max_weight": MAX_WEIGHT,
         "commission": COMMISSION, "slippage": SLIPPAGE,
         "min_commission_sh": MIN_COMMISSION_SH, "min_commission_sz": MIN_COMMISSION_SZ,
+        "execution_timing": args.execution_timing,
+        "execution_note": "引擎只支持收盘成交（信号日=执行日）；next_open 仅为标签/位移近似，未实现开盘成交逻辑",
     }
     (OUT / "manifest_{}.json".format(args.tag)).write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
