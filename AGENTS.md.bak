@@ -1,0 +1,14 @@
+# jqcli 工作区说明
+
+## 策略开发
+
+- 聚宽策略使用标准 Python API，策略源码放在 `strategies/`。
+- 远端策略创建和正式回测属于写操作，必须在用户明确确认后执行。
+- 提交回测时默认使用 `day` 频率和不启用 `--use-credit`。
+- 不读取、输出或提交 `.env`、cookie、token 等凭据内容。
+
+## 本地验证
+
+- 使用 `.venv/Scripts/jqcli.exe` 执行 jqcli 命令。
+- 使用 `.venv/Scripts/python.exe -m pytest -q` 执行测试。
+- 修改策略后先做本地语法检查和 qtype 检查，再展示源码与回测参数。
