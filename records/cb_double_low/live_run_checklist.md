@@ -17,10 +17,17 @@
 5. 先确认研究平台认证（research 依赖聚宽登录态）：
 
    - `jqcli research ls` 正常返回 → 直接进入下一步
-   - 报 `not_authenticated` → 先跑 `python local/scripts/jq_auto_login.py`
+   - 报 `not_authenticated` → 先跑 `python factor_lab/data/jq_auto_login.py`
      （Playwright 自动登录聚宽并导入浏览器级 cookie；需先把密码填进
      `local/secrets/jq_login.json`；该文件已 gitignore，且权限仅当前用户可读写）
    - run_monthly.ps1 的 `[0/3b2]` 已内置同一自检 + 自动登录兜底
+   - **换机器时**（首次启用该自动化）需先补三样：
+     1. `pip install playwright ddddocr`（playwright 是硬依赖；ddddocr 仅用于图片验证码兜底）
+     2. `playwright install chromium`（下载浏览器，约 200 MB）
+     3. 重建 `local/secrets/jq_login.json`：`python local/scripts/set_jq_password.py`
+        （交互输入密码；也可加 `--password-stdin`）
+     注：脚本按「距仓库根 2 层」定位仓库（`factor_lab/data/jq_auto_login.py` 与
+     `local/scripts/jq_auto_login.py` 都满足），并依赖仓库根 `.venv\Scripts\jqcli.exe`（Windows 布局）。
 
 6. cb_convert 抓取 + 解码：
 
