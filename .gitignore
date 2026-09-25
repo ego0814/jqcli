@@ -8,3 +8,6 @@ __pycache__/
 .pytest_cache/
 build/
 uv.lock
+factor_lab/data/cache/
+factor_lab/output/
+factor_lab/data/cache_backup_sample/

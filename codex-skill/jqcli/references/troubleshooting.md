@@ -91,3 +91,27 @@ local/scripts/
 ```
 
 If generated data appears at repo root, move it under `local/` and update the generating command or default path.
+
+## Backtest Concurrency And Wait Status
+
+Symptom A: `backtest run ... --wait` reports `failed` immediately, but the run is still active.
+
+Cause: JoinQuant returns a partial record while the report is still being generated, and the wait loop treats that intermediate state as terminal.
+
+Fix: treat the status printed by `--wait` as provisional. Poll `backtest show <backtest_id>` until it reports `done`, `failed`, or `cancelled` before reading `stats` or `logs`, and never treat the first `failed` as the final result. Do not resubmit the same backtest: a resubmission creates a new record and consumes a concurrency slot.
+
+Symptom B: a submission fails with:
+
+```json
+{"data": null, "status": "2", "code": "20000", "msg": "当前可并行回测数已达2个"}
+```
+
+Cause: the account allows at most two backtests to run at the same time.
+
+Fix: submit formal backtests one at a time and wait for each record to reach a terminal state before starting the next one. Treat this message as a live quota limit, not a local parser failure.
+
+Symptom C: Chinese text in `backtest logs` output is garbled when read through PowerShell.
+
+Cause: the CLI emits UTF-8 while the Windows console decodes with the local code page.
+
+Fix: run `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8` before invoking jqcli, and prefer ASCII markers (ticker codes, API names, `trade price`) when parsing log lines programmatically.
