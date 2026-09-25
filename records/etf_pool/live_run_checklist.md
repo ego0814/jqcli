@@ -16,7 +16,7 @@
 ### 刷新命令
 
 ```powershell
-D:\project\jqcli\factor_lab\.venv\Scripts\python.exe local\scripts\etf_extended_download.py --end <YYYYMMDD>
+D:\project\jqcli\factor_lab\.venv\Scripts\python.exe factor_lab\data\etf_extended_download.py --end <YYYYMMDD>
 ```
 
 - 脚本已支持增量：按 `(code, date)` 合并、**保留新值**、去重；缓存不存在时新建
