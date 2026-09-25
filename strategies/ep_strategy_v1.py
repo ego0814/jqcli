@@ -1,4 +1,12 @@
 # EP 单因子策略 v1
+# ============================================================
+# 【非部署 / NOT DEPLOYED】2026-09-25
+# 策略层不通过：因子有效但形态不匹配 10 万本金
+# v1 夏普 -0.182 / v2 夏普 -0.471
+# 归档：records/ep/ep_strategy_v1.md、records/ep/ep_strategy_v2.md
+# 不再维护
+# ============================================================
+
 # 规格书：specs/ep_strategy_v1.md
 # 数据：/predictions/ep/predictions_ep_v1.csv（列：date,symbol,value）
 import io
