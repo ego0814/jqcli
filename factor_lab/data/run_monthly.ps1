@@ -68,7 +68,7 @@ $env:JQCLI_CB_DAILY    = Join-Path $ProjectRoot "data\cache\cb_daily.parquet"
 $env:JQCLI_MAX_CATCHUP = "$MaxCatchupDays"
 $RepoRoot        = Split-Path $ProjectRoot -Parent
 $Jqcli           = Join-Path $RepoRoot ".venv\Scripts\jqcli.exe"
-$AutoLoginPy     = Join-Path $RepoRoot "local\scripts\jq_auto_login.py"
+$AutoLoginPy     = Join-Path $ProjectRoot "data\jq_auto_login.py"
 $AutoLoginPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"
 
 # 编码：让 python 用 UTF-8 输出，并让 PowerShell 按 UTF-8 解码子进程输出。
